@@ -1,23 +1,21 @@
 const fs = require('fs');
-const warns = require('../warns.json');
+const warnsPath = '../warns.json'; // Path to warns.json
 
 module.exports = {
     name: 'warn',
-    description: 'Warn a member.',
-    execute(message, args) {
+    description: 'Warn a member',
+    run: async (client, message, args) => {
         const member = message.mentions.members.first();
+        const reason = args.slice(1).join(' ') || 'No reason provided';
+        
         if (!member) return message.reply('Please mention a member to warn.');
 
-        const reason = args.slice(1).join(' ') || 'No reason provided.';
-        if (!warns[message.guild.id]) {
-            warns[message.guild.id] = {};
-        }
-        if (!warns[message.guild.id][member.id]) {
-            warns[message.guild.id][member.id] = { warns: [] };
-        }
+        const warns = JSON.parse(fs.readFileSync(warnsPath, 'utf-8')) || {};
+        warns[message.guild.id] = warns[message.guild.id] || {};
+        warns[message.guild.id][member.id] = warns[message.guild.id][member.id] || [];
+        warns[message.guild.id][member.id].push(reason);
 
-        warns[message.guild.id][member.id].warns.push(reason);
-        fs.writeFileSync('./warns.json', JSON.stringify(warns, null, 2));
-        message.reply(`Warned ${member.user.tag} for: \`${reason}\``);
+        fs.writeFileSync(warnsPath, JSON.stringify(warns, null, 2));
+        message.reply(`${member.user.tag} has been warned for: ${reason}`);
     },
 };
